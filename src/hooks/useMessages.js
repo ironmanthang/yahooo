@@ -25,6 +25,7 @@ export function useMessages(conversationId) {
                     created_at,
                     sender_id,
                     is_read,
+                    type,
                     profiles:sender_id (
                         username,
                         avatar_url
@@ -96,6 +97,7 @@ export function useMessages(conversationId) {
                             created_at,
                             sender_id,
                             is_read,
+                            type,
                             profiles:sender_id (
                                 username,
                                 avatar_url

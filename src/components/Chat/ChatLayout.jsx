@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import Sidebar from './Sidebar'
 import MessageList from './MessageList'
 import MessageInput from './MessageInput'
+import GroupInfoPanel from './GroupInfoPanel'
 import { useMessages } from '../../hooks/useMessages'
 import { useConversations } from '../../hooks/useConversations'
 import '../../styles/chat.css'
@@ -9,7 +10,18 @@ import '../../styles/chat.css'
 export default function ChatLayout() {
     const [activeConversationId, setActiveConversationId] = useState(null)
     const [pendingUser, setPendingUser] = useState(null)  // User info before conversations refetch
-    const { conversations, loading: convsLoading, getOrCreateConversation } = useConversations()
+    const [pendingGroup, setPendingGroup] = useState(null)  // Group info before conversations refetch
+    const [showGroupInfo, setShowGroupInfo] = useState(false)  // Group info panel visibility
+    const {
+        conversations,
+        loading: convsLoading,
+        getOrCreateConversation,
+        createGroupConversation,
+        leaveGroup,
+        addMembersToGroup,
+        removeMemberFromGroup,
+        deleteGroup
+    } = useConversations()
     const { messages, loading: msgsLoading, hasMore, loadMore, sendMessage } = useMessages(activeConversationId)
 
     // Find active conversation details
@@ -17,6 +29,16 @@ export default function ChatLayout() {
 
     // Use pending user as fallback until conversations refetch
     const displayUser = activeConversation?.otherUser || pendingUser
+
+    // Determine header display based on conversation type
+    // Use pendingGroup as fallback for newly created groups
+    const isGroup = activeConversation?.type === 'group' || pendingGroup
+    const headerTitle = isGroup
+        ? (activeConversation?.name || pendingGroup?.name || 'Group')
+        : displayUser?.username || 'Chat'
+    const headerSubtitle = isGroup
+        ? `${activeConversation?.participants?.length || pendingGroup?.memberCount || 0} members`
+        : displayUser?.status || 'offline'
 
     async function handleStartConversation(userId, userProfile) {
         try {
@@ -29,18 +51,48 @@ export default function ChatLayout() {
         }
     }
 
-    // Clear pendingUser once real conversation data loads
+    async function handleCreateGroup(name, participantIds) {
+        // Set pending group info immediately for header display
+        setPendingGroup({ name, memberCount: participantIds.length + 1 })  // +1 for creator
+        const conversationId = await createGroupConversation(name, participantIds)
+        setActiveConversationId(conversationId)
+        return conversationId
+    }
+
+    // Clear pending states once real conversation data loads
     useEffect(() => {
-        if (activeConversation && pendingUser) {
-            setPendingUser(null)
+        if (activeConversation) {
+            if (pendingUser) setPendingUser(null)
+            if (pendingGroup) setPendingGroup(null)
         }
-    }, [activeConversation, pendingUser])
+    }, [activeConversation, pendingUser, pendingGroup])
 
     async function handleSendMessage(content) {
         try {
             await sendMessage(content)
         } catch (err) {
             console.error('Error sending:', err)
+        }
+    }
+
+    async function handleLeaveGroup() {
+        if (!activeConversationId) return
+        try {
+            await leaveGroup(activeConversationId)
+            setActiveConversationId(null)  // Clear active conversation
+            setShowGroupInfo(false)  // Close panel
+        } catch (err) {
+            console.error('Error leaving group:', err)
+        }
+    }
+
+    async function handleDeleteGroup(conversationId) {
+        try {
+            await deleteGroup(conversationId)
+            setActiveConversationId(null)  // Clear active conversation
+            setShowGroupInfo(false)  // Close panel
+        } catch (err) {
+            console.error('Error deleting group:', err)
         }
     }
 
@@ -52,19 +104,24 @@ export default function ChatLayout() {
                 activeId={activeConversationId}
                 onSelectConversation={(convId) => {
                     setPendingUser(null)  // Clear pending when selecting existing
+                    setPendingGroup(null)  // Clear pending group too
                     setActiveConversationId(convId)
                 }}
                 onStartConversation={handleStartConversation}
+                onCreateGroup={handleCreateGroup}
             />
 
             <main className="chat-main">
                 {activeConversationId ? (
                     <>
-                        <header className="chat-header">
+                        <header
+                            className={`chat-header ${isGroup ? 'chat-header-clickable' : ''}`}
+                            onClick={() => isGroup && setShowGroupInfo(true)}
+                        >
                             <div className="chat-header-user">
-                                <h2>{displayUser?.username || 'Chat'}</h2>
+                                <h2>{headerTitle}</h2>
                                 <span className="chat-header-status">
-                                    {displayUser?.status || 'offline'}
+                                    {headerSubtitle}
                                 </span>
                             </div>
                         </header>
@@ -74,6 +131,7 @@ export default function ChatLayout() {
                             loading={msgsLoading}
                             hasMore={hasMore}
                             onLoadMore={loadMore}
+                            isGroup={isGroup}
                         />
 
                         <MessageInput onSend={handleSendMessage} />
@@ -88,7 +146,19 @@ export default function ChatLayout() {
                     </div>
                 )}
             </main>
+
+            {/* Group Info Panel */}
+            {showGroupInfo && isGroup && (
+                <GroupInfoPanel
+                    conversation={activeConversation}
+                    onClose={() => setShowGroupInfo(false)}
+                    onLeaveGroup={handleLeaveGroup}
+                    onAddMembers={addMembersToGroup}
+                    onRemoveMember={removeMemberFromGroup}
+                    onDeleteGroup={handleDeleteGroup}
+                />
+            )}
         </div>
     )
 }
- 
+

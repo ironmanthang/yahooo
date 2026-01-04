@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import ConversationItem from './ConversationItem'
 import UserSearchModal from './UserSearchModal'
+import CreateGroupModal from './CreateGroupModal'
 import Avatar from '../Common/Avatar'
 import Button from '../Common/Button'
 import { useAuth } from '../../contexts/AuthContext'
@@ -10,9 +11,11 @@ export default function Sidebar({
     loading,
     activeId,
     onSelectConversation,
-    onStartConversation
+    onStartConversation,
+    onCreateGroup
 }) {
     const [showSearch, setShowSearch] = useState(false)
+    const [showGroupModal, setShowGroupModal] = useState(false)
     const [showSettings, setShowSettings] = useState(false)
     const settingsRef = useRef(null)
     const { profile, signOut } = useAuth()
@@ -34,14 +37,22 @@ export default function Sidebar({
     return (
         <aside className="sidebar">
             <div className="sidebar-header">
-                <Button
-                    variant="primary"
-                    size="sm"
-                    fullWidth
-                    onClick={() => setShowSearch(true)}
-                >
-                    + New Chat
-                </Button>
+                <div className="sidebar-header-buttons">
+                    <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => setShowSearch(true)}
+                    >
+                        + Chat
+                    </Button>
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setShowGroupModal(true)}
+                    >
+                        + Group
+                    </Button>
+                </div>
             </div>
 
             <div className="sidebar-conversations">
@@ -100,6 +111,19 @@ export default function Sidebar({
                     }}
                 />
             )}
+
+            {showGroupModal && (
+                <CreateGroupModal
+                    onClose={() => setShowGroupModal(false)}
+                    onCreateGroup={async (name, participantIds) => {
+                        const convId = await onCreateGroup(name, participantIds)
+                        onSelectConversation(convId)
+                        setShowGroupModal(false)
+                    }}
+                    existingGroups={conversations.filter(c => c.type === 'group')}
+                />
+            )}
+
         </aside>
     )
 }
