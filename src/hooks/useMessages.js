@@ -26,6 +26,15 @@ export function useMessages(conversationId) {
                     sender_id,
                     is_read,
                     type,
+                    reply_to_id,
+                    replied_message:reply_to_id (
+                        id,
+                        content,
+                        sender_id,
+                        profiles:sender_id (
+                            username
+                        )
+                    ),
                     profiles:sender_id (
                         username,
                         avatar_url
@@ -88,7 +97,7 @@ export function useMessages(conversationId) {
                     filter: `conversation_id=eq.${conversationId}`
                 },
                 (payload) => {
-                    // Fetch the full message with sender profile
+                    // Fetch the full message with sender profile and reply data
                     supabase
                         .from('messages')
                         .select(`
@@ -98,6 +107,15 @@ export function useMessages(conversationId) {
                             sender_id,
                             is_read,
                             type,
+                            reply_to_id,
+                            replied_message:reply_to_id (
+                                id,
+                                content,
+                                sender_id,
+                                profiles:sender_id (
+                                    username
+                                )
+                            ),
                             profiles:sender_id (
                                 username,
                                 avatar_url
@@ -119,17 +137,24 @@ export function useMessages(conversationId) {
         }
     }, [conversationId, fetchMessages])
 
-    // Send a message
-    async function sendMessage(content) {
+    // Send a message (optionally as a reply)
+    async function sendMessage(content, replyToId = null) {
         if (!conversationId || !user || !content.trim()) return
+
+        const messageData = {
+            conversation_id: conversationId,
+            sender_id: user.id,
+            content: content.trim()
+        }
+
+        // Add reply reference if replying to a message
+        if (replyToId) {
+            messageData.reply_to_id = replyToId
+        }
 
         const { error } = await supabase
             .from('messages')
-            .insert({
-                conversation_id: conversationId,
-                sender_id: user.id,
-                content: content.trim()
-            })
+            .insert(messageData)
 
         if (error) {
             console.error('Error sending message:', error)

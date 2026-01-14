@@ -871,3 +871,73 @@
 .confirm-hint-danger {
     color: #f87171;
 }
+
+
+/* ============================================
+   REPLY TO MESSAGE STYLES
+   ============================================ */
+
+/* Message action buttons container */
+.message-bubble {
+    position: relative;
+}
+
+.message-action-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    opacity: 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.message-bubble:hover .message-action-btn {
+    opacity: 1;
+}
+
+.message-action-btn:hover {
+    background: var(--accent);
+    color: white;
+}
+
+/* Position reply button on opposite side of bubble */
+.message-sent .reply-btn {
+    left: -36px;
+}
+
+.message-received .reply-btn {
+    right: -36px;
+}
+
+/* Message input container (wraps reply preview + input) */
+.message-input-container {
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border);
+}
+
+.message-input-container .message-input {
+    border-top: none;
+}
+
+.message-input-container .reply-preview {
+    margin: 0.75rem 1.5rem 0;
+}
+
+/* Message footer (time, actions) */
+.message-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}

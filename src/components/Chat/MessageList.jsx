@@ -3,7 +3,7 @@ import MessageBubble from './MessageBubble'
 import Button from '../Common/Button'
 import { useAuth } from '../../contexts/AuthContext'
 
-export default function MessageList({ messages, loading, hasMore, onLoadMore, isGroup = false }) {
+export default function MessageList({ messages, loading, hasMore, onLoadMore, isGroup = false, onReply }) {
     const { user } = useAuth()
     const bottomRef = useRef(null)
     const containerRef = useRef(null)
@@ -42,6 +42,7 @@ export default function MessageList({ messages, loading, hasMore, onLoadMore, is
                         message={msg}
                         isSent={msg.sender_id === user?.id}
                         isGroup={isGroup}
+                        onReply={msg.type !== 'system' ? onReply : undefined}
                     />
                 ))
             )}

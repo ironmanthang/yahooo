@@ -1,7 +1,8 @@
 import Avatar from '../Common/Avatar'
+import ReplyPreview from './ReplyPreview'
 
-export default function MessageBubble({ message, isSent, isGroup = false }) {
-    const { content, created_at, profiles, type } = message
+export default function MessageBubble({ message, isSent, isGroup = false, onReply }) {
+    const { content, created_at, profiles, type, replied_message } = message
 
     function formatTime(timestamp) {
         return new Date(timestamp).toLocaleTimeString([], {
@@ -33,9 +34,29 @@ export default function MessageBubble({ message, isSent, isGroup = false }) {
                 {!isSent && isGroup && (
                     <span className="message-sender-name">{profiles?.username}</span>
                 )}
+
+                {/* Show quoted message if this is a reply */}
+                {replied_message && (
+                    <ReplyPreview message={replied_message} compact />
+                )}
+
                 <p className="message-text">{content}</p>
-                <span className="message-time">{formatTime(created_at)}</span>
+                <div className="message-footer">
+                    <span className="message-time">{formatTime(created_at)}</span>
+                </div>
             </div>
+
+            {/* Reply action button */}
+            {onReply && (
+                <button
+                    className="message-action-btn reply-btn"
+                    onClick={() => onReply(message)}
+                    aria-label="Reply to message"
+                    title="Reply"
+                >
+                    ↩
+                </button>
+            )}
         </div>
     )
 }

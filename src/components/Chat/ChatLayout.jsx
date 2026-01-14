@@ -12,6 +12,7 @@ export default function ChatLayout() {
     const [pendingUser, setPendingUser] = useState(null)  // User info before conversations refetch
     const [pendingGroup, setPendingGroup] = useState(null)  // Group info before conversations refetch
     const [showGroupInfo, setShowGroupInfo] = useState(false)  // Group info panel visibility
+    const [replyTo, setReplyTo] = useState(null)  // Message being replied to
     const {
         conversations,
         loading: convsLoading,
@@ -67,13 +68,23 @@ export default function ChatLayout() {
         }
     }, [activeConversation, pendingUser, pendingGroup])
 
-    async function handleSendMessage(content) {
+    async function handleSendMessage(content, replyToId = null) {
         try {
-            await sendMessage(content)
+            await sendMessage(content, replyToId)
         } catch (err) {
             console.error('Error sending:', err)
         }
     }
+
+    // Handle reply to a message
+    function handleReply(message) {
+        setReplyTo(message)
+    }
+
+    // Clear reply when switching conversations
+    useEffect(() => {
+        setReplyTo(null)
+    }, [activeConversationId])
 
     async function handleLeaveGroup() {
         if (!activeConversationId) return
@@ -132,9 +143,14 @@ export default function ChatLayout() {
                             hasMore={hasMore}
                             onLoadMore={loadMore}
                             isGroup={isGroup}
+                            onReply={handleReply}
                         />
 
-                        <MessageInput onSend={handleSendMessage} />
+                        <MessageInput
+                            onSend={handleSendMessage}
+                            replyTo={replyTo}
+                            onCancelReply={() => setReplyTo(null)}
+                        />
                     </>
                 ) : (
                     <div className="chat-empty">
